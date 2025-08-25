@@ -202,4 +202,20 @@ impl_runtime_apis! {
         fn submit_report_equivocation_unsigned_extrinsic(_equivocation_proof: sp_finality_grandpa::EquivocationProof<<Block as sp_runtime::traits::Block>::Hash, sp_finality_grandpa::AuthorityId>, _key_owner_proof: sp_finality_grandpa::OpaqueKeyOwnershipProof) -> Option<()> { None }
         fn generate_key_ownership_proof(_set_id: sp_finality_grandpa::SetId, _authority_id: sp_finality_grandpa::AuthorityId) -> Option<sp_finality_grandpa::OpaqueKeyOwnershipProof> { None }
     }
+
+    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
+        fn account_nonce(account: AccountId) -> Index {
+            System::account_nonce(account)
+        }
+    }
+
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
+        fn query_info(uxt: <Block as sp_runtime::traits::Block>::Extrinsic, len: u32) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_info(uxt, len)
+        }
+        fn query_fee_details(uxt: <Block as sp_runtime::traits::Block>::Extrinsic, len: u32) -> pallet_transaction_payment_rpc_runtime_api::FeeDetails<Balance> {
+            TransactionPayment::query_fee_details(uxt, len)
+        }
+    }
+
 }
