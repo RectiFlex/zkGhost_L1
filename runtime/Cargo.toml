@@ -68,3 +68,6 @@ runtime-benchmarks = [
   "frame-benchmarking",
   "pallet-zkghost/runtime-benchmarks",
 ]
+
+[build-dependencies]
+substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }

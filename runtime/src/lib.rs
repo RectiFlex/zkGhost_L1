@@ -1,5 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+
+#[cfg(feature = "std")]
+include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+
+
 pub use frame_support::{construct_runtime, parameter_types};
 use frame_support::traits::Everything;
 use frame_system as system;
