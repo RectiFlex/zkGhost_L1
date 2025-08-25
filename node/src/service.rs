@@ -43,18 +43,18 @@ pub fn new_partial(
         sc_consensus::LongestChain<FullBackend, Block>,
         sc_consensus::DefaultImportQueue<Block>,
         sc_transaction_pool::FullPool<Block, FullClient>,
-        (Option<Telemetry>, Option<TelemetryWorker>),
+        (Option<Telemetry>, Option<TelemetryWorker>, sc_finality_grandpa::GrandpaBlockImport<FullBackend, FullClient, sc_consensus::LongestChain<FullBackend, Block>>, sc_finality_grandpa::LinkHalf<Block>),
     >,
     Error,
 > {
-    let telemetry_worker_and_handle = if let Some(endpoints) = config.telemetry_endpoints.clone().filter(|x| !x.is_empty()) {
+    let telemetry_worker_handle = if let Some(t) = config.telemetry_endpoints.clone().filter(|x| !x.is_empty()) {
         let worker = TelemetryWorker::new(16)?;
-        (Some(worker), Some(worker.handle().new_telemetry(endpoints)))
+        (Some(worker), Some(worker.handle().new_telemetry(t)))
     } else {
         (None, None)
     };
 
-    let telemetry = telemetry_worker_and_handle.1.clone();
+    let telemetry = telemetry_worker_handle.1.clone();
 
     let executor = NativeElseWasmExecutor::<ExecutorDispatch>::new(
         config.wasm_method,
@@ -63,14 +63,14 @@ pub fn new_partial(
         config.runtime_cache_size,
     );
 
-    let (client, backend, keystore_container, mut task_manager) = new_full_parts::<Block, RuntimeApi, _>(
+    let (client, backend, keystore_container, task_manager) = new_full_parts::<Block, RuntimeApi, _>(
         config,
         None,
         executor,
     )?;
     let client = Arc::new(client);
 
-    if let Some(worker) = telemetry_worker_and_handle.0 {
+    if let Some(worker) = telemetry_worker_handle.0 {
         task_manager.spawn_handle().spawn("telemetry", None, worker.run());
     }
 
@@ -85,28 +85,15 @@ pub fn new_partial(
     );
 
     // GRANDPA block import and link
-    let (grandpa_block_import, _grandpa_link) = sc_finality_grandpa::block_import(client.clone(), &select_chain)?;
+    let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(client.clone(), &select_chain)?;
 
-    // Aura import queue
-    let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-    let import_queue = sc_consensus_aura::import_queue::<AuraId, _, _, _>(
-        sc_consensus_aura::ImportQueueParams {
-            block_import: grandpa_block_import.clone(),
-            justification_import: Some(grandpa_block_import.clone()),
-            client: client.clone(),
-            create_inherent_data_providers: move |_, _| async move {
-                let timestamp = pallet_timestamp::InherentDataProvider::from_system_time();
-                Ok((timestamp,))
-            },
-            spawner: &task_manager.spawn_handle(),
-            registry: config.prometheus_registry(),
-            check_for_equivocation: Default::default(),
-            telemetry: telemetry.as_ref().map(|t| t.handle()),
-            compatibility_mode: Default::default(),
-            slot_duration,
-            block_proposal_slot_portion: sc_consensus_aura::SlotProportion::new(2f32 / 3f32),
-            max_block_proposal_slot_portion: Some(sc_consensus_aura::SlotProportion::new(3f32 / 4f32)),
-        },
+    let import_queue = build_import_queue(
+        client.clone(),
+        config,
+        &task_manager.spawn_handle(),
+        sc_consensus::BoxBlockImport::new(grandpa_block_import.clone()),
+        Some(Box::new(grandpa_block_import.clone())),
+        telemetry.as_ref().map(|t| t.handle()),
     )?;
 
     Ok(PartialComponents {
@@ -117,7 +104,7 @@ pub fn new_partial(
         keystore_container,
         select_chain,
         transaction_pool,
-        other: (telemetry, telemetry_worker_and_handle.0),
+        other: (telemetry, telemetry_worker_handle.0, grandpa_block_import, grandpa_link),
     })
 }
 
@@ -137,7 +124,7 @@ pub fn new_full(
         keystore_container,
         select_chain,
         transaction_pool,
-        other: (mut telemetry, telemetry_worker),
+        other: (mut telemetry, telemetry_worker, grandpa_block_import, grandpa_link),
     } = new_partial(&config)?;
 
     let (network, system_rpc_tx, network_starter) = build_network(sc_service::BuildNetworkParams {
