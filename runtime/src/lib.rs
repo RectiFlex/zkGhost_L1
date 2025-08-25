@@ -9,7 +9,7 @@ use frame_system as system;
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H256};
 use sp_runtime::{
-    generic, MultiSignature,
+    generic, MultiAddress, MultiSignature,
     traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult,
@@ -22,6 +22,11 @@ pub type AccountId = <Signature as Verify>::Signer::AccountId;
 pub type Balance = u128;
 pub type Index = u32;
 pub type Hash = H256;
+
+pub type Address = MultiAddress<AccountId, ()>;
+pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+pub type UncheckedExtrinsic = sp_runtime::OpaqueExtrinsic;
+pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
 // Aura authority ID type
 pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
@@ -40,7 +45,6 @@ parameter_types! {
     };
     pub const ExistentialDeposit: Balance = 1_000_000_000_000; // 0.001 GHOST if decimals=12
     pub const MinimumPeriod: u64 = 3000; // 6s block time => 3s minimum period
-    pub const MaxAuthorities: u32 = 32;
 }
 
 impl system::Config for Runtime {
@@ -56,7 +60,7 @@ impl system::Config for Runtime {
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
     type Lookup = AccountIdLookup<AccountId, ()>;
-    type Header = generic::Header<BlockNumber, BlakeTwo256>;
+    type Header = Header;
     type RuntimeEvent = RuntimeEvent;
     type BlockHashCount = BlockHashCount;
     type Version = Version;
@@ -85,7 +89,7 @@ impl pallet_grandpa::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type KeyOwnerProof = sp_core::Void;
     type EquivocationReportSystem = ();
-    type MaxAuthorities = frame_support::traits::ConstU32<{ MaxAuthorities::get() }>;
+    type MaxAuthorities = frame_support::traits::ConstU32<32>;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -104,8 +108,8 @@ impl pallet_transaction_payment::Config for Runtime {
     type RuntimeEvent = RuntimeEvent;
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<pallet_balances::Pallet<Runtime>, ()>;
     type OperationalFeeMultiplier = frame_support::traits::ConstU8<5>;
-    type WeightToFee = (); // customize later
-    type LengthToFee = (); // customize later
+    type WeightToFee = ();
+    type LengthToFee = ();
     type FeeMultiplierUpdate = ();
 }
 
@@ -123,19 +127,13 @@ impl pallet_zkghost::Config for Runtime {
     type WeightInfo = pallet_zkghost::weights::DefaultWeight;
 }
 
-pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
-pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-pub type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
-pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-
-pub struct Executive;
-impl frame_executive::Executive<
+type Executive = frame_executive::Executive<
     Runtime,
     Block,
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-> for Executive {}
+>;
 
 construct_runtime!(
     pub enum Runtime where

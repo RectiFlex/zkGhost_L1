@@ -34,6 +34,7 @@ pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", tag = "
 # RPC crates
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 jsonrpsee = "0.22"
 
 # Utils

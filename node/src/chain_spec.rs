@@ -1,22 +1,23 @@
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
-use sp_keyring::AccountKeyring;
 use zkghost_runtime::{self as runtime, AccountId, Signature, AuraId, Balance};
 
 pub type ChainSpec = sc_service::GenericChainSpec<runtime::GenesisConfig>;
 
 type AccountPublic = <Signature as sp_runtime::traits::Verify>::Signer;
 
-fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where AccountPublic: From<sr25519::Public>, {
-    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("Invalid seed");
+fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
+where
+    AccountPublic: From<sr25519::Public>,
+{
+    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("valid seed");
     AccountPublic::from(pair.public()).into_account()
 }
 
-fn get_aura_keys_from_seed(seed: &str) -> runtime::AuraId {
-    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("Invalid seed");
+fn get_aura_keys_from_seed(seed: &str) -> AuraId {
+    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("valid seed");
     pair.public().into()
-}", seed), None).expect("Invalid seed").public().into()
 }
 
 pub fn development_config() -> ChainSpec {
@@ -46,7 +47,7 @@ pub fn development_config() -> ChainSpec {
 
 #[allow(clippy::too_many_arguments)]
 fn testnet_genesis(
-    initial_authorities: Vec<runtime::AuraId>,
+    initial_authorities: Vec<AuraId>,
     root_key: AccountId,
     endowed_accounts: Vec<(AccountId, Balance)>,
 ) -> runtime::GenesisConfig {
@@ -57,7 +58,6 @@ fn testnet_genesis(
         aura: runtime::AuraConfig { authorities: initial_authorities },
         grandpa: Default::default(),
         transaction_payment: Default::default(),
-        timestamp: Default::default(),
-        zkghost: Default::default(),
+        zk_ghost: Default::default(),
     }
 }
