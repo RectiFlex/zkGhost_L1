@@ -4,40 +4,31 @@ use sp_core::{sr25519, Pair, Public};
 use sp_keyring::AccountKeyring;
 use zkghost_runtime::{self as runtime, AccountId, Signature, AuraId, Balance};
 
-type AccountPublic = <Signature as sp_runtime::traits::Verify>::Signer;
-
 pub type ChainSpec = sc_service::GenericChainSpec<runtime::GenesisConfig>;
 
-fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-where
-    AccountPublic: From<sr25519::Public>,
-{
-    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("valid static seed");
+type AccountPublic = <Signature as sp_runtime::traits::Verify>::Signer;
+
+fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where AccountPublic: From<sr25519::Public>, {
+    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("seed");
     AccountPublic::from(pair.public()).into_account()
 }
 
-fn get_aura_keys_from_seed(seed: &str) -> AuraId {
-    sr25519::Pair::from_string(&format!("//{}", seed), None).expect("valid static seed").public().into()
+fn get_aura_keys_from_seed(seed: &str) -> runtime::AuraId {
+    sr25519::Pair::from_string(&format!("//{}", seed), None).expect("seed").public().into()
 }
 
 pub fn development_config() -> ChainSpec {
     ChainSpec::from_genesis(
-        // Name
         "zkGhost Development",
-        // ID
         "zkghost-dev",
         ChainType::Development,
         move || testnet_genesis(
-            // initial authorities
             vec![get_aura_keys_from_seed("Alice")],
-            // sudo
             get_account_id_from_seed::<sr25519::Public>("Alice"),
-            // endowed
             vec![
                 (get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000_000_000_000_000u128),
                 (get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000_000_000_000_000u128),
             ],
-            true,
         ),
         vec![],
         None,
@@ -53,10 +44,9 @@ pub fn development_config() -> ChainSpec {
 
 #[allow(clippy::too_many_arguments)]
 fn testnet_genesis(
-    initial_authorities: Vec<AuraId>,
+    initial_authorities: Vec<runtime::AuraId>,
     root_key: AccountId,
     endowed_accounts: Vec<(AccountId, Balance)>,
-    _enable_println: bool,
 ) -> runtime::GenesisConfig {
     runtime::GenesisConfig {
         system: runtime::SystemConfig { code: zkghost_runtime::WASM_BINARY.to_vec(), ..Default::default() },

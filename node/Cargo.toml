@@ -2,7 +2,7 @@
 name = "zkghost-node"
 version = "0.1.0"
 edition = "2021"
-description = "zkGhost node (scaffold with Aura/Grandpa and RPC stubs)"
+description = "zkGhost node (Aura/Grandpa)"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -10,6 +10,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 log = "0.4"
 hex-literal = "0.4"
+thiserror = "1"
 
 # Substrate node deps (pinned)
 sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
@@ -18,19 +19,28 @@ sc-telemetry = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polk
 sc-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-network = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-consensus = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-finality-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 
 jsonrpsee = { version = "0.22", features = ["server", "macros", "client-core"] }
 
 zkghost-runtime = { path = "../runtime", features = ["std"] }
+
+[features]
+default = []
 
 [bin]
 name = "zkghost-node"

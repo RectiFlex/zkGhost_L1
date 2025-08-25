@@ -158,3 +158,48 @@ pub mod benches {
     use super::*;
     use frame_benchmarking::Benchmarking;
 }
+
+
+use frame_executive::Executive;
+
+pub type Executive = Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPalletsWithSystem>;
+
+#[cfg(feature = "std")]
+use sp_api::impl_runtime_apis;
+
+#[cfg(feature = "std")]
+impl_runtime_apis! {
+    impl sp_api::Core<Block> for Runtime {
+        fn version() -> sp_version::RuntimeVersion { Version::get() }
+        fn execute_block(block: Block) { Executive::execute_block(block) }
+        fn initialize_block(header: &<Block as sp_runtime::traits::Block>::Header) { Executive::initialize_block(header) }
+    }
+
+    impl sp_api::Metadata<Block> for Runtime {
+        fn metadata() -> sp_core::OpaqueMetadata { Runtime::metadata().into() }
+    }
+
+    impl sp_block_builder::BlockBuilder<Block> for Runtime {
+        fn apply_extrinsic(extrinsic: <Block as sp_runtime::traits::Block>::Extrinsic) -> sp_runtime::ApplyExtrinsicResult { Executive::apply_extrinsic(extrinsic) }
+        fn finalize_block() -> <Block as sp_runtime::traits::Block>::Header { Executive::finalize_block() }
+        fn inherent_extrinsics(data: sp_inherents::InherentData) -> Vec<<Block as sp_runtime::traits::Block>::Extrinsic> { Executive::inherent_extrinsics(data) }
+        fn check_inherents(block: Block, data: sp_inherents::InherentData) -> sp_inherents::CheckInherentsResult { Executive::check_inherents(block, data) }
+        fn random_seed() -> <Block as sp_runtime::traits::Block>::Hash { System::random_seed() }
+    }
+
+    impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+        fn validate_transaction(source: sp_runtime::transaction_validity::TransactionSource, tx: <Block as sp_runtime::traits::Block>::Extrinsic, block_hash: <Block as sp_runtime::traits::Block>::Hash) -> sp_runtime::transaction_validity::TransactionValidity { Executive::validate_transaction(source, tx, block_hash) }
+    }
+
+    impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+        fn slot_duration() -> sp_consensus_aura::SlotDuration { sp_consensus_aura::SlotDuration::from_millis((MinimumPeriod::get() as u64) * 2) }
+        fn authorities() -> Vec<AuraId> { Aura::authorities() }
+    }
+
+    impl sp_finality_grandpa::GrandpaApi<Block> for Runtime {
+        fn grandpa_authorities() -> sp_finality_grandpa::AuthorityList { Grandpa::grandpa_authorities() }
+        fn current_set_id() -> sp_finality_grandpa::SetId { Grandpa::current_set_id() }
+        fn submit_report_equivocation_unsigned_extrinsic(_equivocation_proof: sp_finality_grandpa::EquivocationProof<<Block as sp_runtime::traits::Block>::Hash, sp_finality_grandpa::AuthorityId>, _key_owner_proof: sp_finality_grandpa::OpaqueKeyOwnershipProof) -> Option<()> { None }
+        fn generate_key_ownership_proof(_set_id: sp_finality_grandpa::SetId, _authority_id: sp_finality_grandpa::AuthorityId) -> Option<sp_finality_grandpa::OpaqueKeyOwnershipProof> { None }
+    }
+}
