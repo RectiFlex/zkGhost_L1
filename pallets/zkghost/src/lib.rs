@@ -30,6 +30,7 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
+    type WeightInfo: weights::WeightInfo;
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
         /// Max serialized length in bytes of a verifying key.
@@ -125,7 +126,7 @@ pub mod weights {
     impl<T: Config> Pallet<T> {
         /// Set the verifying key bytes for a circuit id. Only Root may call.
         #[pallet::call_index(0)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::set_vk())]
         pub fn set_vk(
             origin: OriginFor<T>,
             circuit_id: CircuitId,
@@ -152,7 +153,7 @@ pub mod weights {
 
         /// Submit a proof for verification. Will fail in MVP since verifier returns false.
         #[pallet::call_index(1)]
-        #[pallet::weight(0)]
+        #[pallet::weight(T::WeightInfo::set_vk())]
         pub fn submit_proof(
             origin: OriginFor<T>,
             circuit_id: CircuitId,
