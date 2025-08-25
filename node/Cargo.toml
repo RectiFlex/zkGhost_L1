@@ -2,12 +2,35 @@
 name = "zkghost-node"
 version = "0.1.0"
 edition = "2021"
-description = "zkGhost node (scaffold; integrate services next)"
+description = "zkGhost node (scaffold with Aura/Grandpa and RPC stubs)"
 
 [dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+hex-literal = "0.4"
+
+# Substrate node deps (pinned)
+sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-service = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
-sc-cli     = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
-zkghost-runtime = { path = "../runtime", features=["std"] }
+sc-telemetry = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-network = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-finality-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+
+jsonrpsee = { version = "0.22", features = ["server", "macros", "client-core"] }
+
+zkghost-runtime = { path = "../runtime", features = ["std"] }
 
 [bin]
 name = "zkghost-node"

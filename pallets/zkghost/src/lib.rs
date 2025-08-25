@@ -251,3 +251,4 @@ impl<T: Config> Pallet<T> {
         }
     }
 }
+\n#[cfg(feature = "runtime-benchmarks")]\nmod benchmarking;\n
