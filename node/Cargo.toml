@@ -38,6 +38,9 @@ sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", tag 
 jsonrpsee = { version = "0.22", features = ["server", "macros", "client-core"] }
 
 zkghost-runtime = { path = "../runtime", features = ["std"] }
+sc-consensus = { version = "0.34.0", default-features = true }
+substrate-frame-rpc-system = { version = "35.0.0", default-features = true }
+pallet-transaction-payment-rpc = { version = "35.0.0", default-features = true }
 
 [features]
 default = []

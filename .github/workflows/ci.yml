@@ -1,0 +1,96 @@
+name: zkGhost CI
+
+on:
+  push:
+    branches: [ "main", "master", "zkghost-*", "feature/*" ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: "Run E2E tests (requires heavier runner)"
+        required: false
+        default: "false"
+      run_bench:
+        description: "Run benchmarking to generate weights"
+        required: false
+        default: "false"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang llvm cmake pkg-config libssl-dev protobuf-compiler \
+            make git curl
+      - name: Install Rust (stable) + wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: Build workspace (host)
+        run: |
+          cargo build --workspace --locked
+      - name: Build runtime WASM
+        run: |
+          cargo build -p zkghost-runtime --release --target wasm32-unknown-unknown
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang llvm cmake pkg-config libssl-dev protobuf-compiler
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: Run unit tests (pallet + runtime) with zk verification
+        env:
+          RUSTFLAGS: "-C debuginfo=0"
+        run: |
+          cargo test -p pallet-zkghost --features zk-verify -- --nocapture
+          cargo test -p zkghost-runtime -- --nocapture
+      - name: Run ignored E2E tests (lightweight)
+        if: inputs.run_e2e == 'true'
+        run: |
+          cargo test -- --ignored --nocapture
+
+  weights:
+    runs-on: ubuntu-latest
+    if: inputs.run_bench == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang llvm cmake pkg-config libssl-dev protobuf-compiler
+      - name: Install Rust (nightly for benchmarks)
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: Generate weights (placeholder)
+        run: |
+          echo "Benchmark wiring will be finalized post service wiring & runtime benchmarking impl."
+          echo "Creating placeholder weights artifact." 
+          mkdir -p artifacts
+          test -f pallets/zkghost/src/weights.rs && cp pallets/zkghost/src/weights.rs artifacts/weights.rs || echo "// placeholder" > artifacts/weights.rs
+      - name: Upload weights artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zkghost-weights
+          path: artifacts/weights.rs
