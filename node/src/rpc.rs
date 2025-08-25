@@ -1,3 +1,4 @@
+use zkghost_runtime::{AccountId, Index, Balance};
 use jsonrpsee::RpcModule;
 use sc_client_api::{AuxStore, HeaderBackend};
 use sc_rpc_api::DenyUnsafe;

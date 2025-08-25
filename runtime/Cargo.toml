@@ -55,7 +55,7 @@ std = [
   "pallet-timestamp/std",
   "pallet-aura/std",
   "pallet-grandpa/std",
-  "pallet-zkghost/std",
+  "pallet-zkghost/std", "sp-inherents/std",
   "sp-api/std",
   "sp-core/std",
   "sp-runtime/std",
