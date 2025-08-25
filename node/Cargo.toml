@@ -11,7 +11,6 @@ serde_json = "1"
 log = "0.4"
 hex-literal = "0.4"
 thiserror = "1"
-
 # Substrate node deps (pinned)
 sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-service = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
@@ -23,7 +22,6 @@ sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polka
 sc-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
-
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
@@ -34,13 +32,13 @@ sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkad
 sp-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
-
 jsonrpsee = { version = "0.22", features = ["server", "macros", "client-core"] }
-
 zkghost-runtime = { path = "../runtime", features = ["std"] }
 sc-consensus = { version = "0.34.0", default-features = true }
 substrate-frame-rpc-system = { version = "35.0.0", default-features = true }
 pallet-transaction-payment-rpc = { version = "35.0.0", default-features = true }
+sc-network-common = { version = "0.34.0" }
+pallet-timestamp = { version = "35.0.0", default-features = false, features = ["std"] }
 
 [features]
 default = []
