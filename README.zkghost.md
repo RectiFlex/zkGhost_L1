@@ -63,3 +63,13 @@ target. No external crates are fetched here; integrate with Substrate externally
 
 - Consensus target: BABE/GRANDPA; token: GHOST; networking via libp2p (through Substrate).
 - This repo avoids Substrate crates to remain offline-friendly; uncomment deps when integrating.
+
+## Enabling on-chain ZK verification
+- The pallet ships with a feature flag `zk-verify` that integrates arkworks Groth16 on BN254.
+- In this offline scaffold, arkworks dependencies are commented out. To enable verification in a full Substrate environment:
+  1. Uncomment arkworks dependencies in `pallets/zkghost/Cargo.toml` and pin versions.
+  2. Build with `--features zk-verify`.
+  3. Ensure your `submit_proof` calls pass:
+     - `vk`: ark-serialize canonical bytes of Groth16 verifying key (BN254)
+     - `proof`: ark-serialize bytes of the proof
+     - `public_inputs`: concatenated 32-byte little-endian field elements (Fr)

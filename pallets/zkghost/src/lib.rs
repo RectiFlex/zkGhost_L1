@@ -195,3 +195,26 @@ pub mod pallet {
         }
     }
 }
+
+// === zkGhost verifier shim ===
+#[cfg(any(feature = "zk-verify", test))]
+mod zkghost_verifier_shim {
+    use super::*;
+    use crate::verifier::{Backend as VerifierBackend, VerifierBackend as _};
+
+    pub fn zkghost_verify_groth16(vk: &[u8], proof: &[u8], public_inputs: &[u8]) -> Result<bool, &'static str> {
+        match <VerifierBackend as VerifierBackend>::verify_groth16_bn254(vk, proof, public_inputs) {
+            Ok(ok) => Ok(ok),
+            Err(crate::verifier::VerifyError::Disabled) => Err("VerifierDisabled"),
+            Err(crate::verifier::VerifyError::Malformed) => Err("Malformed"),
+            Err(crate::verifier::VerifyError::Backend) => Err("BackendError"),
+        }
+    }
+}
+
+#[cfg(not(any(feature = "zk-verify", test)))]
+mod zkghost_verifier_shim {
+    pub fn zkghost_verify_groth16(_vk: &[u8], _proof: &[u8], _public_inputs: &[u8]) -> Result<bool, &'static str> {
+        Err("VerifierDisabled")
+    }
+}

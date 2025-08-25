@@ -33,3 +33,20 @@ std = [
 
 [package.metadata.docs.rs]
 all-features = true
+
+# ZK verifier feature flag — keep offline-friendly; enable in external build
+[features]
+# keep existing std feature entries above
+zk-verify = [
+    # Enable these when building with network access and Substrate externally:
+    # "ark-groth16",
+    # "ark-bn254",
+    # "ark-serialize",
+    # "ark-ff",
+]
+
+# [dependencies]
+# ark-groth16 = { version = "0.4", default-features = false, optional = true }
+# ark-bn254   = { version = "0.4", default-features = false, optional = true }
+# ark-serialize = { version = "0.4", default-features = false, optional = true }
+# ark-ff      = { version = "0.4", default-features = false, optional = true }
