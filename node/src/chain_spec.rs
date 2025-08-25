@@ -9,12 +9,14 @@ pub type ChainSpec = sc_service::GenericChainSpec<runtime::GenesisConfig>;
 type AccountPublic = <Signature as sp_runtime::traits::Verify>::Signer;
 
 fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId where AccountPublic: From<sr25519::Public>, {
-    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("seed");
+    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("Invalid seed");
     AccountPublic::from(pair.public()).into_account()
 }
 
 fn get_aura_keys_from_seed(seed: &str) -> runtime::AuraId {
-    sr25519::Pair::from_string(&format!("//{}", seed), None).expect("seed").public().into()
+    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("Invalid seed");
+    pair.public().into()
+}", seed), None).expect("Invalid seed").public().into()
 }
 
 pub fn development_config() -> ChainSpec {
