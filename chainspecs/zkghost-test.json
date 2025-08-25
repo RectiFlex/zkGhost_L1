@@ -1,0 +1,1 @@
+{ "name": "zkGhost Test", "id": "zkghost-test", "chainType": "Local", "bootNodes": [], "telemetryEndpoints": null, "protocolId": "zkghost-test", "properties": {"tokenSymbol":"GHOST","tokenDecimals":12}, "genesis": {} }

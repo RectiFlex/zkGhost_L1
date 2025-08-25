@@ -1,0 +1,18 @@
+[package]
+name = "zkghost-prover-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ark-std = { version = "0.4", features=["print-trace"] }
+ark-relations = "0.4"
+ark-groth16 = "0.4"
+ark-bn254 = "0.4"
+ark-ff = "0.4"
+ark-serialize = "0.4"
+rand = "0.8"
+clap = { version = "4", features=["derive"] }
+
+[bin]
+name = "zkghost-prover"
+path = "src/main.rs"

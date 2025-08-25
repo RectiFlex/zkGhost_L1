@@ -11,42 +11,42 @@ name = "pallet_zkghost"
 path = "src/lib.rs"
 crate-type = ["rlib"]
 
-# NOTE: Uncomment and pin versions when building with Substrate externally.
-# [dependencies]
-# frame-support = { version = "*", default-features = false }
-# frame-system  = { version = "*", default-features = false }
-# sp-io         = { version = "*", default-features = false }
-# sp-std        = { version = "*", default-features = false }
-# parity-scale-codec = { version = "*", default-features = false, features = ["derive"] }
-# scale-info         = { version = "*", default-features = false, features = ["derive"] }
+[dependencies]
+# Substrate FRAME/SP (pinned via git tag)
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+frame-system  = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-io         = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-std        = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+parity-scale-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info         = { version = "2", default-features = false, features = ["derive"] }
+
+# Arkworks (optional; used when feature `zk-verify` is enabled)
+ark-groth16  = { version = "0.4", default-features = false, optional = true }
+ark-bn254    = { version = "0.4", default-features = false, optional = true }
+ark-serialize= { version = "0.4", default-features = false, optional = true }
+ark-ff       = { version = "0.4", default-features = false, optional = true }
 
 [features]
 default = ["std"]
 std = [
-    # "frame-support/std",
-    # "frame-system/std",
-    # "sp-io/std",
-    # "sp-std/std",
-    # "parity-scale-codec/std",
-    # "scale-info/std",
+  "frame-support/std",
+  "frame-system/std",
+  "sp-io/std",
+  "sp-std/std",
+  "parity-scale-codec/std",
+  "scale-info/std",
+  # When zk-verify is enabled together with std, allow std for arkworks too
+  "ark-groth16?/std",
+  "ark-bn254?/std",
+  "ark-serialize?/std",
+  "ark-ff?/std",
+]
+zk-verify = [
+  "ark-groth16",
+  "ark-bn254",
+  "ark-serialize",
+  "ark-ff",
 ]
 
 [package.metadata.docs.rs]
 all-features = true
-
-# ZK verifier feature flag — keep offline-friendly; enable in external build
-[features]
-# keep existing std feature entries above
-zk-verify = [
-    # Enable these when building with network access and Substrate externally:
-    # "ark-groth16",
-    # "ark-bn254",
-    # "ark-serialize",
-    # "ark-ff",
-]
-
-# [dependencies]
-# ark-groth16 = { version = "0.4", default-features = false, optional = true }
-# ark-bn254   = { version = "0.4", default-features = false, optional = true }
-# ark-serialize = { version = "0.4", default-features = false, optional = true }
-# ark-ff      = { version = "0.4", default-features = false, optional = true }

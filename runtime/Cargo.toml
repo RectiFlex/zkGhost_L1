@@ -4,28 +4,49 @@ version = "0.1.0"
 edition = "2021"
 authors = ["zkGhost Contributors"]
 license = "Apache-2.0"
+description = "Substrate runtime for zkGhost (pinned to polkadot-sdk v1.11)"
 
 [lib]
 name = "zkghost_runtime"
 path = "src/lib.rs"
+crate-type = ["rlib"]
 
-# NOTE: This crate is a placeholder. When integrating with Substrate externally,
-# uncomment and adjust the dependencies below, then implement the FRAME runtime.
-#
-# [dependencies]
-# frame-system = { version = "*", default-features = false }
-# pallet-timestamp = { version = "*", default-features = false }
-# pallet-balances = { version = "*", default-features = false }
-# pallet-transaction-payment = { version = "*", default-features = false }
-# pallet-sudo = { version = "*", default-features = false }
-# sp-runtime = { version = "*", default-features = false }
-# sp-std = { version = "*", default-features = false }
-# sp-io = { version = "*", default-features = false }
-# sp-core = { version = "*", default-features = false }
-# parity-scale-codec = { version = "*", default-features = false, features = ["derive"] }
-# scale-info = { version = "*", default-features = false, features = ["derive"] }
-# pallet-zkghost = { path = "../pallets/zkghost", default-features = false }
+[dependencies]
+# FRAME/SP
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+frame-system  = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-api       = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-core      = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-runtime   = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-io        = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-std       = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+sp-version   = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
+
+# Local pallet
+pallet-zkghost = { path = "../pallets/zkghost", default-features = false }
+
+# Codec and type info
+parity-scale-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2", default-features = false, features = ["derive"] }
 
 [features]
 default = ["std"]
-std = []
+std = [
+  "frame-support/std",
+  "frame-system/std",
+  "pallet-balances/std",
+  "pallet-transaction-payment/std",
+  "pallet-sudo/std",
+  "pallet-zkghost/std",
+  "sp-api/std",
+  "sp-core/std",
+  "sp-runtime/std",
+  "sp-io/std",
+  "sp-std/std",
+  "sp-version/std",
+  "parity-scale-codec/std",
+  "scale-info/std",
+]

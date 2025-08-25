@@ -1,0 +1,1 @@
+{ "name": "zkGhost Dev", "id": "zkghost-dev", "chainType": "Development", "bootNodes": [], "telemetryEndpoints": null, "protocolId": "zkghost-dev", "properties": {"tokenSymbol":"GHOST","tokenDecimals":12}, "genesis": {} }

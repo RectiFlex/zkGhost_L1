@@ -99,6 +99,18 @@ pub mod pallet {
         InvalidProof,
     }
 
+#[pallet::weights]
+pub mod weights {
+    use frame_support::weights::Weight;
+    pub trait WeightInfo { fn set_vk() -> Weight; fn submit_proof() -> Weight; }
+    pub struct DefaultWeight;
+    impl WeightInfo for DefaultWeight {
+        fn set_vk() -> Weight { 0 }
+        fn submit_proof() -> Weight { 0 }
+    }
+}
+
+
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: BlockNumberFor<T>) -> Weight {

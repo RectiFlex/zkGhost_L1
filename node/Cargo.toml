@@ -2,11 +2,13 @@
 name = "zkghost-node"
 version = "0.1.0"
 edition = "2021"
-authors = ["zkGhost Contributors"]
-license = "Apache-2.0"
+description = "zkGhost node (scaffold; integrate services next)"
 
 [dependencies]
+sc-service = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+sc-cli     = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+zkghost-runtime = { path = "../runtime", features=["std"] }
 
-[[bin]]
+[bin]
 name = "zkghost-node"
 path = "src/main.rs"

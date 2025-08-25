@@ -1,16 +1,8 @@
 [workspace]
 members = [
-    "node",
-    "runtime",
-    "pallets/zkghost"
+  "node",
+  "runtime",
+  "pallets/zkghost",
+  "tools/prover-cli",
 ]
 resolver = "2"
-
-[workspace.package]
-edition = "2021"
-version = "0.1.0"
-license = "Apache-2.0"
-authors = ["zkGhost Contributors"]
-
-[workspace.metadata]
-description = "zkGhost L1 scaffold (offline-friendly)."
