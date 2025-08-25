@@ -39,7 +39,6 @@ substrate-frame-rpc-system = { version = "35.0.0", default-features = true }
 pallet-transaction-payment-rpc = { version = "35.0.0", default-features = true }
 sc-network-common = { version = "0.34.0" }
 pallet-timestamp = { version = "35.0.0", default-features = false, features = ["std"] }
-
 [features]
 default = []
 
