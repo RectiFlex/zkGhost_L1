@@ -175,7 +175,7 @@ pub mod pallet {
             let proof_hash = blake2_256(&proof_bounded);
 
             // Placeholder: always false. Replace with arkworks verifier integration.
-            let ok = Self::verify_proof(circuit_id, &proof_bounded, &inputs_bounded);
+            let ok = Self::verify_proof_via_shim(circuit_id, let ok = Self::verify_proof(circuit_id, &proof_bounded, &inputs_bounded);proof_bounded, let ok = Self::verify_proof(circuit_id, &proof_bounded, &inputs_bounded);inputs_bounded);
             ensure!(ok, Error::<T>::InvalidProof);
 
             Self::deposit_event(Event::ProofVerified { who, circuit_id, proof_hash });
@@ -216,5 +216,25 @@ mod zkghost_verifier_shim {
 mod zkghost_verifier_shim {
     pub fn zkghost_verify_groth16(_vk: &[u8], _proof: &[u8], _public_inputs: &[u8]) -> Result<bool, &'static str> {
         Err("VerifierDisabled")
+    }
+}
+
+impl<T: Config> Pallet<T> {
+    /// Verifies a Groth16 proof via the feature-gated arkworks shim.
+    /// Returns false on any error (including when verifier feature is disabled).
+    fn verify_proof_via_shim(
+        circuit_id: CircuitId,
+        proof: &BoundedVec<u8, T::MaxProofLength>,
+        public_inputs: &BoundedVec<u8, T::MaxPublicInputsLength>,
+    ) -> bool {
+        // Fetch verifying key
+        let vk_bounded = match VerifyingKeys::<T>::get(circuit_id) { Some(v) => v, None => return false };
+        let vk: &[u8] = vk_bounded.as_slice();
+        let pr: &[u8] = proof.as_slice();
+        let inputs: &[u8] = public_inputs.as_slice();
+        match crate::zkghost_verifier_shim::zkghost_verify_groth16(vk, pr, inputs) {
+            Ok(true) => true,
+            _ => false,
+        }
     }
 }
