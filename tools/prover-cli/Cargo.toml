@@ -1,18 +1,24 @@
 [package]
-name = "zkghost-prover-cli"
+name = "prover-cli"
 version = "0.1.0"
 edition = "2021"
+authors = ["zkGhost Contributors"]
+license = "Apache-2.0"
+description = "Demo prover CLI for zkGhost (generates VK/proof/inputs artifacts)."
 
 [dependencies]
-ark-std = { version = "0.4", features=["print-trace"] }
-ark-relations = "0.4"
-ark-groth16 = "0.4"
-ark-bn254 = "0.4"
-ark-ff = "0.4"
-ark-serialize = "0.4"
-rand = "0.8"
-clap = { version = "4", features=["derive"] }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hex = "0.4"
+rand = { version = "0.8", default-features = false, features = ["std"] }
 
-[bin]
-name = "zkghost-prover"
-path = "src/main.rs"
+# Optional ZK backend (not used in default CI build)
+ark-std = { version = "0.4", optional = true }
+ark-bn254 = { version = "0.4", optional = true }
+ark-groth16 = { version = "0.4", optional = true }
+ark-serialize = { version = "0.4", optional = true }
+
+[features]
+default = []
+zk-verify = ["ark-std", "ark-bn254", "ark-groth16", "ark-serialize"]
