@@ -2,59 +2,57 @@
 name = "pallet-zkghost"
 version = "0.1.0"
 edition = "2021"
-authors = ["zkGhost Contributors"]
+description = "zkGhost pallet: on-chain Groth16 verification with VK governance"
 license = "Apache-2.0"
-description = "FRAME pallet for storing verifying keys and submitting proofs (zkGhost)."
-
-[lib]
-name = "pallet_zkghost"
-path = "src/lib.rs"
-crate-type = ["rlib"]
 
 [dependencies]
-# Substrate FRAME/SP (pinned via git tag)
+# FRAME
 frame-support = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
 frame-system  = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
-sp-io         = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
 sp-std        = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }
-parity-scale-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-scale-info         = { version = "2", default-features = false, features = ["derive"] }
+scale-info    = { version = "2", default-features = false, features = ["derive"] }
 
-# Arkworks (optional; used when feature `zk-verify` is enabled)
-ark-groth16  = { version = "0.4", default-features = false, optional = true }
-ark-bn254    = { version = "0.4", default-features = false, optional = true }
-ark-serialize= { version = "0.4", default-features = false, optional = true }
-ark-ff       = { version = "0.4", default-features = false, optional = true }
+# Arkworks (feature-gated)
+ark-groth16   = { version = "0.4", default-features = false, optional = true }
+ark-bn254     = { version = "0.4", default-features = false, optional = true }
+ark-ec        = { version = "0.4", default-features = false, optional = true }
+ark-ff        = { version = "0.4", default-features = false, optional = true }
+ark-serialize = { version = "0.4", default-features = false, optional = true }
+ark-std       = { version = "0.4", default-features = false, optional = true }
+
+[dev-dependencies]
+frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 
 [features]
 default = ["std"]
 std = [
   "frame-support/std",
   "frame-system/std",
-  "sp-io/std",
   "sp-std/std",
-  "parity-scale-codec/std",
   "scale-info/std",
-  # When zk-verify is enabled together with std, allow std for arkworks too
+  # When building with std, allow arkworks to use std if present
   "ark-groth16?/std",
   "ark-bn254?/std",
-  "ark-serialize?/std",
+  "ark-ec?/std",
   "ark-ff?/std",
+  "ark-serialize?/std",
+  "ark-std?/std",
 ]
+
+# Enable ZK verification backend
 zk-verify = [
   "ark-groth16",
   "ark-bn254",
-  "ark-serialize",
+  "ark-ec",
   "ark-ff",
+  "ark-serialize",
+  "ark-std",
 ]
 
-[package.metadata.docs.rs]
-all-features = true
-
-[dev-dependencies]
-frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
-
-
-[features]
-runtime-benchmarks = []
-
+# Benchmarking feature passthrough
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+]
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0", default-features = false }

@@ -1,0 +1,129 @@
+name: zkGhost CI
+
+on:
+  push:
+    branches: [ "main", "master", "zkghost-*", "feature/*" ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: "Run E2E tests (requires heavier runner)"
+        required: false
+        default: "false"
+      run_bench:
+        description: "Run benchmarking to generate weights"
+        required: false
+        default: "false"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang llvm cmake pkg-config libssl-dev protobuf-compiler \
+            make git curl
+      - name: Install Rust (stable) + wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: Tool versions
+        run: |
+          rustc -Vv || true
+          cargo -V || true
+      - name: Build workspace (host)
+        run: |
+          set -o pipefail
+          cargo build --workspace --locked --verbose 2>&1 | tee build-host.log
+      - name: Upload host build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-host-log
+          path: build-host.log
+      - name: Build runtime WASM
+        run: |
+          set -o pipefail
+          cargo build -p zkghost-runtime --release --target wasm32-unknown-unknown --verbose 2>&1 | tee build-wasm.log
+      - name: Upload wasm build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-wasm-log
+          path: build-wasm.log
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang llvm cmake pkg-config libssl-dev protobuf-compiler
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: Run unit tests (pallet + runtime) with zk verification
+        env:
+          RUSTFLAGS: "-C debuginfo=0"
+        run: |
+          set -o pipefail
+          cargo test -p pallet-zkghost --features zk-verify -- --nocapture 2>&1 | tee test-zkghost.log
+          cargo test -p zkghost-runtime -- --nocapture 2>&1 | tee -a test-zkghost.log
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: test-zkghost.log
+      - name: Run ignored E2E tests (optional)
+        if: ${{ inputs.run_e2e == 'true' }}
+        run: |
+          set -o pipefail
+          cargo test -- --ignored --nocapture 2>&1 | tee test-e2e.log
+      - name: Upload E2E logs (if ran)
+        if: ${{ inputs.run_e2e == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-e2e-logs
+          path: test-e2e.log
+
+  weights:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.run_bench == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang llvm cmake pkg-config libssl-dev protobuf-compiler
+      - name: Install Rust (nightly for benchmarks)
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: Generate weights (placeholder)
+        run: |
+          echo "Benchmark wiring will be finalized post service wiring & runtime benchmarking impl." | tee weights.log
+          mkdir -p artifacts
+          test -f pallets/zkghost/src/weights.rs && cp pallets/zkghost/src/weights.rs artifacts/weights.rs || echo "// placeholder" > artifacts/weights.rs
+      - name: Upload weights artifact and log
+        uses: actions/upload-artifact@v4
+        with:
+          name: zkghost-weights
+          path: |
+            artifacts/weights.rs
+            weights.log

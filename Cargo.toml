@@ -1,8 +1,9 @@
 [workspace]
 members = [
-  "node",
-  "runtime",
-  "pallets/zkghost",
-  "tools/prover-cli",
+    "node",
+    "runtime",
+    "pallets/zkghost",
+    "tools/prover-cli",
+    "tools/zkghost-cli"
 ]
 resolver = "2"
