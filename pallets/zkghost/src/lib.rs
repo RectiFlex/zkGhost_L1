@@ -1,3 +1,4 @@
+use sp_core::hashing::blake2_256;
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // FRAME-style pallet for zkGhost.
