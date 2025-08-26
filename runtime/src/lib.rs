@@ -199,3 +199,25 @@ impl_runtime_apis! {
         }
     }
 }
+
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benches_runtime_api {
+    use super::*;
+    use frame_benchmarking::BenchmarkList;
+    use sp_api::impl_runtime_apis;
+    use sp_core::OpaqueMetadata;
+    use sp_runtime::traits::Block as BlockT;
+
+    impl_runtime_apis! {
+        impl frame_benchmarking::Benchmark<Block> for Runtime {
+            fn benchmark_metadata(extrinsic: Option<sp_runtime::RuntimeString>) -> Result<(BenchmarkList, Vec<u8>), sp_runtime::RuntimeString> {
+                let list = vec![];
+                Ok((list, Vec::new()))
+            }
+            fn dispatch_benchmark(_config: frame_benchmarking::BenchmarkConfig) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
+                Ok(Vec::new())
+            }
+        }
+    }
+}

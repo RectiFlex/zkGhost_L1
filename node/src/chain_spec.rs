@@ -1,63 +1,56 @@
 use sc_service::ChainType;
-use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
-use zkghost_runtime::{self as runtime, AccountId, Signature, AuraId, Balance};
+use sp_keyring::AccountKeyring;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use zkghost_runtime::{AccountId, Signature, BalancesConfig, SudoConfig, AuraConfig, GrandpaConfig, SystemConfig, WASM_BINARY, opaque::SessionKeys};
+use zkghost_runtime::GenesisConfig;
 
-pub type ChainSpec = sc_service::GenericChainSpec<runtime::GenesisConfig>;
+pub type AccountPublic = <Signature as Verify>::Signer;
 
-type AccountPublic = <Signature as sp_runtime::traits::Verify>::Signer;
-
-fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-where
-    AccountPublic: From<sr25519::Public>,
-{
-    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("valid seed");
-    AccountPublic::from(pair.public()).into_account()
+fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+    TPublic::Pair::from_string(&format!("//{}", seed), None).expect("static values are valid; qed").public()
 }
 
-fn get_aura_keys_from_seed(seed: &str) -> AuraId {
-    let pair = sr25519::Pair::from_string(&format!("//{}", seed), None).expect("valid seed");
-    pair.public().into()
+fn authority_keys_from_seed(seed: &str) -> (sr25519::Public, sp_finality_grandpa::AuthorityId) {
+    (get_from_seed::<sr25519::Public>(seed), get_from_seed::<sp_finality_grandpa::AuthorityId>(seed))
 }
 
-pub fn development_config() -> ChainSpec {
-    ChainSpec::from_genesis(
-        "zkGhost Development",
-        "zkghost-dev",
+fn endowed() -> Vec<AccountId> {
+    use AccountKeyring::*;
+    vec![Alice, Bob, Charlie, Dave, Eve, Ferdie].into_iter().map(|k| AccountId::from(k.to_account_id())).collect()
+}
+
+pub fn development_config() -> Result<sc_service::GenericChainSpec<GenesisConfig>, String> {
+    let wasm_binary = WASM_BINARY.ok_or_else(|| "WASM binary not built. Build the runtime first.".to_string())?;
+
+    let (aura_id, grandpa_id) = authority_keys_from_seed("Alice");
+
+    Ok(sc_service::GenericChainSpec::from_genesis(
+        "zkGhost Dev",
+        "zkghost_dev",
         ChainType::Development,
-        move || testnet_genesis(
-            vec![get_aura_keys_from_seed("Alice")],
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            vec![
-                (get_account_id_from_seed::<sr25519::Public>("Alice"), 1_000_000_000_000_000_000u128),
-                (get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000_000_000_000_000u128),
-            ],
-        ),
+        move || testnet_genesis(wasm_binary, vec![(aura_id.clone(), grandpa_id.clone())], AccountKeyring::Alice.to_account_id().into(), endowed()),
         vec![],
         None,
         None,
         None,
-        Some(sc_service::Properties::from_iter(vec![
-            ("tokenSymbol".into(), serde_json::json!("GHOST")),
-            ("tokenDecimals".into(), serde_json::json!(12)),
-        ])),
-        Default::default(),
-    )
+        None,
+    ))
 }
 
-#[allow(clippy::too_many_arguments)]
 fn testnet_genesis(
-    initial_authorities: Vec<AuraId>,
+    wasm_binary: &[u8],
+    initial_authorities: Vec<(sr25519::Public, sp_finality_grandpa::AuthorityId)>,
     root_key: AccountId,
-    endowed_accounts: Vec<(AccountId, Balance)>,
-) -> runtime::GenesisConfig {
-    runtime::GenesisConfig {
-        system: runtime::SystemConfig { code: zkghost_runtime::WASM_BINARY.to_vec(), ..Default::default() },
-        balances: runtime::BalancesConfig { balances: endowed_accounts },
-        sudo: runtime::SudoConfig { key: Some(root_key) },
-        aura: runtime::AuraConfig { authorities: initial_authorities },
-        grandpa: Default::default(),
+    endowed_accounts: Vec<AccountId>,
+) -> GenesisConfig {
+    GenesisConfig {
+        system: SystemConfig { code: wasm_binary.to_vec(), ..Default::default() },
+        balances: BalancesConfig { balances: endowed_accounts.iter().cloned().map(|k| (k, 1u128 << 60)).collect() },
+        aura: AuraConfig { authorities: initial_authorities.iter().map(|x| x.0.clone()).collect() },
+        grandpa: GrandpaConfig { authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1u64)).collect() },
+        sudo: SudoConfig { key: Some(root_key) },
         transaction_payment: Default::default(),
-        zk_ghost: Default::default(),
+        zkghost: Default::default(),
     }
 }

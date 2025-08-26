@@ -4,12 +4,15 @@ use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 #[derive(Debug, Parser)]
 #[command(name = "zkghost-node")]
 pub struct Cli {
+    #[command(flatten)]
+    pub run: sc_cli::RunCmd,
     #[command(subcommand)]
     pub subcommand: Option<Subcommand>,
 }
 
 #[derive(Debug, ClapSub)]
 pub enum Subcommand {
+    Run(sc_cli::RunCmd),
     BuildSpec(sc_cli::BuildSpecCmd),
     CheckBlock(sc_cli::CheckBlockCmd),
     ExportBlocks(sc_cli::ExportBlocksCmd),
