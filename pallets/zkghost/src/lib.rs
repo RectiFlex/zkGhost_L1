@@ -103,10 +103,12 @@ pub mod pallet {
 #[pallet::weights]
 pub mod weights {
     use frame_support::weights::Weight;
-    pub trait WeightInfo { fn set_vk() -> Weight; fn submit_proof() -> Weight; }
+    pub trait WeightInfo { fn set_vk() -> Weight; #[pallet::weight(<T as Config>::WeightInfo::submit_proof(public_inputs.len() as u32, proof.len() as u32))]
+        fn submit_proof() -> Weight; }
     pub struct DefaultWeight;
     impl WeightInfo for DefaultWeight {
         fn set_vk() -> Weight { 0 }
+        #[pallet::weight(<T as Config>::WeightInfo::submit_proof(public_inputs.len() as u32, proof.len() as u32))]
         fn submit_proof() -> Weight { 0 }
     }
 }
@@ -154,7 +156,8 @@ pub mod weights {
         /// Submit a proof for verification. Will fail in MVP since verifier returns false.
         #[pallet::call_index(1)]
         #[pallet::weight(T::WeightInfo::set_vk())]
-        pub fn submit_proof(
+        pub #[pallet::weight(<T as Config>::WeightInfo::submit_proof(public_inputs.len() as u32, proof.len() as u32))]
+        fn submit_proof(
             origin: OriginFor<T>,
             circuit_id: CircuitId,
             proof: Vec<u8>,
