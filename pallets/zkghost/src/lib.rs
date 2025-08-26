@@ -1,82 +1,52 @@
-use sp_core::hashing::blake2_256;
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// FRAME-style pallet for zkGhost.
-//
-// Functionality (MVP):
-// - Store verifying keys (VK) by circuit id.
-// - Track a small metadata tuple (vk_hash, last_updated_block).
-// - Enforce per-block cap on proof submissions.
-// - `set_vk` (Root) and `submit_proof` (Signed).
-// - Input length checks using BoundedVec and explicit ensures.
-// - Placeholder verifier that always returns false.
-//
-// Integrators: replace `verify_proof` with arkworks-based verification (e.g., ark-groth16).
+pub mod weights;
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarking;
+mod verifier;
 
 use sp_std::prelude::*;
+
+pub type CircuitId = u32;
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
-    use core::marker::PhantomData;
     use frame_support::{
         pallet_prelude::*,
         BoundedVec,
         Blake2_128Concat,
     };
     use frame_system::pallet_prelude::*;
-    use sp_io::hashing::blake2_256;
-
-    pub type CircuitId = u32;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-    type WeightInfo: weights::WeightInfo;
         type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-        /// Max serialized length in bytes of a verifying key.
+        type WeightInfo: crate::weights::WeightInfo;
+        /// Max length for a proof (bytes)
         #[pallet::constant]
-        type MaxVkLength: Get<u32>;
-
-        /// Max serialized length of a proof (bytes).
+        type MaxProofLen: Get<u32>;
+        /// Max length for inputs (bytes)
         #[pallet::constant]
-        type MaxProofLength: Get<u32>;
-
-        /// Max serialized length of public inputs (bytes).
+        type MaxInputsLen: Get<u32>;
+        /// Max length for VK metadata (bytes)
         #[pallet::constant]
-        type MaxPublicInputsLength: Get<u32>;
-
-        /// Max proofs allowed per block to throttle verification.
+        type MaxVkMetaLen: Get<u32>;
+        /// Max accepted proofs per block
         #[pallet::constant]
         type MaxProofsPerBlock: Get<u32>;
-
-        /// Weight info placeholder. Replace with real weights when available.
-        type WeightInfo: Default;
     }
 
+    type ProofOf<T> = BoundedVec<u8, <T as Config>::MaxProofLen>;
+    type InputsOf<T> = BoundedVec<u8, <T as Config>::MaxInputsLen>;
+    type VkMetaOf<T> = BoundedVec<u8, <T as Config>::MaxVkMetaLen>;
+
     #[pallet::pallet]
-    pub struct Pallet<T>(PhantomData<T>);
+    pub struct Pallet<T>(_);
 
     #[pallet::storage]
     #[pallet::getter(fn verifying_keys)]
-    pub type VerifyingKeys<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        CircuitId,
-        BoundedVec<u8, T::MaxVkLength>,
-        OptionQuery
-    >;
-
-    /// (vk_hash, last_updated_block) where vk_hash = blake2_256(serialized_vk)
-    #[pallet::storage]
-    #[pallet::getter(fn circuit_meta)]
-    pub type CircuitMeta<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat,
-        CircuitId,
-        ([u8; 32], BlockNumberFor<T>),
-        OptionQuery
-    >;
+    pub type VerifyingKeys<T: Config> = StorageMap<_, Blake2_128Concat, CircuitId, VkMetaOf<T>>;
 
     #[pallet::storage]
     #[pallet::getter(fn proofs_this_block)]
@@ -85,174 +55,70 @@ pub mod pallet {
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
     pub enum Event<T: Config> {
-        /// A verifying key was set for a circuit id.
-        VkSet { circuit_id: CircuitId, vk_hash: [u8; 32] },
-        /// A proof was verified on-chain.
-        ProofVerified { who: T::AccountId, circuit_id: CircuitId, proof_hash: [u8; 32] },
+        VkSet { vk_id: CircuitId },
+        ProofSubmitted { who: T::AccountId, vk_id: CircuitId },
     }
 
     #[pallet::error]
     pub enum Error<T> {
-        VerifyingKeyTooLong,
-        ProofTooLong,
-        PublicInputsTooLong,
-        UnknownCircuit,
+        VkNotFound,
         TooManyProofsThisBlock,
         InvalidProof,
     }
 
-#[pallet::weights]
-pub mod weights {
-    use frame_support::weights::Weight;
-    pub trait WeightInfo { fn set_vk() -> Weight; #[pallet::weight(<T as Config>::WeightInfo::submit_proof(public_inputs.len() as u32, proof.len() as u32))]
-        fn submit_proof() -> Weight; }
-    pub struct DefaultWeight;
-    impl WeightInfo for DefaultWeight {
-        fn set_vk() -> Weight { 0 }
-        #[pallet::weight(<T as Config>::WeightInfo::submit_proof(public_inputs.len() as u32, proof.len() as u32))]
-        fn submit_proof() -> Weight { 0 }
-    }
-}
-
-
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-            // Reset per-block proof counter.
-            ProofsThisBlock::<T>::put(0u32);
-            // Weight accounting intentionally omitted in this scaffold.
-            0
+            // Reset per-block counter. Minimal weight since a single write.
+            ProofsThisBlock::<T>::put(0);
+            Weight::from_parts(1_000, 0)
         }
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// Set the verifying key bytes for a circuit id. Only Root may call.
-        #[pallet::call_index(0)]
-        #[pallet::weight(T::WeightInfo::set_vk())]
-        pub fn set_vk(
-            origin: OriginFor<T>,
-            circuit_id: CircuitId,
-            vk: Vec<u8>,
-        ) -> DispatchResult {
+        #[pallet::weight(T::WeightInfo::set_vk(vk_meta.len() as u32))]
+        pub fn set_vk(origin: OriginFor<T>, vk_id: CircuitId, vk_meta: VkMetaOf<T>) -> DispatchResult {
             ensure_root(origin)?;
-            ensure!(
-                (vk.len() as u32) <= T::MaxVkLength::get(),
-                Error::<T>::VerifyingKeyTooLong
-            );
-            let bounded: BoundedVec<u8, T::MaxVkLength> =
-                BoundedVec::try_from(vk).expect("length checked; qed");
-
-            let vk_hash = blake2_256(&bounded);
-            VerifyingKeys::<T>::insert(circuit_id, &bounded);
-            CircuitMeta::<T>::insert(
-                circuit_id,
-                (vk_hash, <frame_system::Pallet<T>>::block_number()),
-            );
-
-            Self::deposit_event(Event::VkSet { circuit_id, vk_hash });
+            VerifyingKeys::<T>::insert(vk_id, vk_meta);
+            Self::deposit_event(Event::VkSet { vk_id });
             Ok(())
         }
 
-        /// Submit a proof for verification. Will fail in MVP since verifier returns false.
-        #[pallet::call_index(1)]
-        #[pallet::weight(T::WeightInfo::set_vk())]
-        pub #[pallet::weight(<T as Config>::WeightInfo::submit_proof(public_inputs.len() as u32, proof.len() as u32))]
-        fn submit_proof(
+        #[pallet::weight(T::WeightInfo::submit_proof(inputs.len() as u32))]
+        pub fn submit_proof(
             origin: OriginFor<T>,
-            circuit_id: CircuitId,
-            proof: Vec<u8>,
-            public_inputs: Vec<u8>,
+            vk_id: CircuitId,
+            proof: ProofOf<T>,
+            inputs: InputsOf<T>,
         ) -> DispatchResult {
             let who = ensure_signed(origin)?;
+            ensure!(VerifyingKeys::<T>::contains_key(vk_id), Error::<T>::VkNotFound);
 
-            // Input size checks prior to bounding.
-            ensure!(
-                (proof.len() as u32) <= T::MaxProofLength::get(),
-                Error::<T>::ProofTooLong
-            );
-            ensure!(
-                (public_inputs.len() as u32) <= T::MaxPublicInputsLength::get(),
-                Error::<T>::PublicInputsTooLong
-            );
-
-            let proof_bounded: BoundedVec<u8, T::MaxProofLength> =
-                BoundedVec::try_from(proof).expect("length checked; qed");
-            let inputs_bounded: BoundedVec<u8, T::MaxPublicInputsLength> =
-                BoundedVec::try_from(public_inputs).expect("length checked; qed");
-
-            // Ensure circuit exists.
-            ensure!(VerifyingKeys::<T>::contains_key(circuit_id), Error::<T>::UnknownCircuit);
-
-            // Throttle per-block.
-            let count = ProofsThisBlock::<T>::get();
+            let mut count = ProofsThisBlock::<T>::get();
             ensure!(count < T::MaxProofsPerBlock::get(), Error::<T>::TooManyProofsThisBlock);
-            ProofsThisBlock::<T>::put(count + 1);
 
-            let proof_hash = blake2_256(&proof_bounded);
-
-            // Placeholder: always false. Replace with arkworks verifier integration.
-            let ok = Self::verify_proof_via_shim(circuit_id, let ok = Self::verify_proof(circuit_id, &proof_bounded, &inputs_bounded);proof_bounded, let ok = Self::verify_proof(circuit_id, &proof_bounded, &inputs_bounded);inputs_bounded);
+            // Verification shim (feature-gated real ZK, stub otherwise)
+            let ok = Self::verify_proof_via_shim(vk_id, &proof, &inputs);
             ensure!(ok, Error::<T>::InvalidProof);
 
-            Self::deposit_event(Event::ProofVerified { who, circuit_id, proof_hash });
+            count = count.saturating_add(1);
+            ProofsThisBlock::<T>::put(count);
+
+            Self::deposit_event(Event::ProofSubmitted { who, vk_id });
             Ok(())
         }
     }
 
     impl<T: Config> Pallet<T> {
-        /// Placeholder verifier.
-        /// Replace with ark-groth16 verification during integration.
-        fn verify_proof(
-            _circuit_id: CircuitId,
-            _proof: &BoundedVec<u8, T::MaxProofLength>,
-            _public_inputs: &BoundedVec<u8, T::MaxPublicInputsLength>,
-        ) -> bool {
-            false
+        fn verify_proof_via_shim(_vk_id: CircuitId, proof: &[u8], inputs: &[u8]) -> bool {
+            #[cfg(feature = "zk-verify")]
+            {
+                // Delegate to verifier module; returns bool
+                return crate::verifier::verify_groth16_bn254(proof, inputs);
+            }
+            // Offline/dev default: accept non-empty proof/inputs as placeholder
+            !proof.is_empty() && !inputs.is_empty()
         }
     }
 }
-
-// === zkGhost verifier shim ===
-#[cfg(any(feature = "zk-verify", test))]
-mod zkghost_verifier_shim {
-    use super::*;
-    use crate::verifier::{Backend as VerifierBackend, VerifierBackend as _};
-
-    pub fn zkghost_verify_groth16(vk: &[u8], proof: &[u8], public_inputs: &[u8]) -> Result<bool, &'static str> {
-        match <VerifierBackend as VerifierBackend>::verify_groth16_bn254(vk, proof, public_inputs) {
-            Ok(ok) => Ok(ok),
-            Err(crate::verifier::VerifyError::Disabled) => Err("VerifierDisabled"),
-            Err(crate::verifier::VerifyError::Malformed) => Err("Malformed"),
-            Err(crate::verifier::VerifyError::Backend) => Err("BackendError"),
-        }
-    }
-}
-
-#[cfg(not(any(feature = "zk-verify", test)))]
-mod zkghost_verifier_shim {
-    pub fn zkghost_verify_groth16(_vk: &[u8], _proof: &[u8], _public_inputs: &[u8]) -> Result<bool, &'static str> {
-        Err("VerifierDisabled")
-    }
-}
-
-impl<T: Config> Pallet<T> {
-    /// Verifies a Groth16 proof via the feature-gated arkworks shim.
-    /// Returns false on any error (including when verifier feature is disabled).
-    fn verify_proof_via_shim(
-        circuit_id: CircuitId,
-        proof: &BoundedVec<u8, T::MaxProofLength>,
-        public_inputs: &BoundedVec<u8, T::MaxPublicInputsLength>,
-    ) -> bool {
-        // Fetch verifying key
-        let vk_bounded = match VerifyingKeys::<T>::get(circuit_id) { Some(v) => v, None => return false };
-        let vk: &[u8] = vk_bounded.as_slice();
-        let pr: &[u8] = proof.as_slice();
-        let inputs: &[u8] = public_inputs.as_slice();
-        match crate::zkghost_verifier_shim::zkghost_verify_groth16(vk, pr, inputs) {
-            Ok(true) => true,
-            _ => false,
-        }
-    }
-}
-\n#[cfg(feature = "runtime-benchmarks")]\nmod benchmarking;\n
