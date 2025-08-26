@@ -221,3 +221,27 @@ mod benches_runtime_api {
         }
     }
 }
+
+// Opaque types and SessionKeys for node/service and chain-specs.
+pub mod opaque {
+    use super::*;
+    use sp_runtime::{generic, traits::BlakeTwo256, OpaqueExtrinsic};
+
+    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+    pub type UncheckedExtrinsic = OpaqueExtrinsic;
+    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+    pub type BlockId = generic::BlockId<Block>;
+
+    sp_runtime::impl_opaque_keys! {
+        pub struct SessionKeys {
+            pub aura: Aura,
+            pub grandpa: Grandpa,
+        }
+    }
+}
+
+// WASM binary is provided by substrate-wasm-builder build script. This const should be Some(...) in release builds.
+#[cfg(feature = "std")]
+pub const WASM_BINARY: Option<&[u8]> = Some(include_bytes!(env!("WASM_BINARY_PATH")));
+#[cfg(not(feature = "std"))]
+pub const WASM_BINARY: Option<&[u8]> = None;
