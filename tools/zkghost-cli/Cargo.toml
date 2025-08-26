@@ -1,0 +1,22 @@
+[package]
+name = "zkghost-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["zkGhost Contributors"]
+license = "Apache-2.0"
+description = "Developer CLI for zkGhost: chain info, balances, transfer, set-vk, submit-proof"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
+# Substrate dynamic client for easy integration
+subxt = { version = "0.35", default-features = false, features = ["websocket", "subxt-metadata"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+ss58-registry = "1"
+
+[features]
+default = []

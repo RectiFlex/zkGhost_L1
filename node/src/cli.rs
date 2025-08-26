@@ -12,6 +12,7 @@ pub struct Cli {
 
 #[derive(Debug, ClapSub)]
 pub enum Subcommand {
+    Benchmark(frame_benchmarking_cli::BenchmarkCmd),
     Run(sc_cli::RunCmd),
     BuildSpec(sc_cli::BuildSpecCmd),
     CheckBlock(sc_cli::CheckBlockCmd),

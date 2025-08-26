@@ -6,6 +6,7 @@ description = "zkGhost node (Aura/GRANDPA, polkadot-sdk v1.11.0)"
 license = "Apache-2.0"
 
 [dependencies]
+frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-sdk-v1.11.0" }
 # Local runtime
 zkghost-runtime = { path = "../runtime", package = "zkghost-runtime" }
 
