@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Placeholder guidance for generating weights once benchmarking is fully wired
-# Build runtime with benchmarking features (may require nightly and proper CLI wiring):
-# RUSTFLAGS="-C target-cpu=native" \
-# cargo build -p zkghost-runtime --features runtime-benchmarks --release
-# Then run node benchmarking subcommand (once implemented) to produce weights.rs.
-# For now, update pallets/zkghost/src/weights.rs manually or via CI job once enabled.
-echo "Benchmark scaffolding in place. Final wiring to be completed post-CI stabilization."
+# Requires nightly toolchain and runtime-benchmarks feature
+RUSTFLAGS=${RUSTFLAGS:-""} cargo run --release \
+  -p zkghost-node \
+  --features runtime-benchmarks \
+  -- benchmark pallet \
+  --chain dev \
+  --execution=wasm \
+  --wasm-execution=compiled \
+  --log=warn \
+  --pallet pallet_zkghost \
+  --extrinsic "*" \
+  --steps 50 \
+  --repeat 20 \
+  --output ./pallets/zkghost/src/weights.rs \
+  --template ./.maintain/frame-weight-template.hbs || true
